@@ -1,0 +1,221 @@
+.sign {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: var(--color-halfdark);
+}
+
+.event {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 5px;
+    padding: 5px;
+    justify-content: space-between;
+    align-items: stretch;
+    border-radius: 30px;
+    min-height: 50px;
+    font-weight: 600;
+    margin-bottom: 7px;
+    color: var(--color-dark);
+    background-color: var(--color-main);
+}
+
+.event.first-child {
+    margin-top: 50px;
+}
+
+.event.last-child {
+    margin-bottom: 200px;
+}
+
+.event .wall {
+    width: 50px;
+    border-radius: 25px;
+    background-color: var(--color-halfdark);
+}
+
+.event .decoration {
+    margin: 5px;
+    margin-bottom: auto;
+    background-color: var(--color-dark);
+}
+
+.event .header {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.event .upperheader {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 5px;
+    flex-grow: 1;
+}
+
+.event .titles {
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    min-height: 50px;
+    flex-grow: 1;
+}
+
+.event .titles .titletype {
+    font-size: var(--font-size-s);
+}
+
+.event .titles .titlename {
+    font-size: var(--font-size-xl);
+    word-break: break-word;
+}
+
+.event .buttons {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 5px;
+    margin: 5px;
+}
+
+.event .buttons button {
+    padding: 5px;
+}
+
+.event .tasks {
+    display: flex;
+    flex-flow: column nowrap;
+    padding: 4px;
+    list-style: none;
+    border-radius: 8px;
+    margin-right: 25px;
+    gap: 3px;
+    color: var(--color-dark);
+    background-color: var(--color-quarterdark);
+}
+
+.event .tasks .task {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    cursor: pointer;
+}
+
+.event .tasks .task .check {
+    width: 12px;
+    min-width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    border: 2px solid;
+    margin-left: 2px;
+    border-color: var(--color-dark);
+}
+
+.event .tasks .task .description {
+    border-left: 2px solid;
+    margin-left: 3px;
+    padding-left: 3px;
+}
+
+@keyframes rotateAnimation {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(-360deg);
+    }
+}
+
+.loading {
+    margin: auto;
+    margin-top: 15px;
+    width: 30%;
+    animation: rotateAnimation 2s linear infinite;
+}
+
+#eventlist {
+    padding: 0 8px;
+    margin: 0 8px;
+    height: 100%;
+    overflow-y: scroll;
+}
+
+#homeButton {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+}
+
+#filter {
+    position: absolute;
+    top: -3px;
+    right: 8px;
+    z-index: 1;
+    pointer-events: none;
+}
+
+#filter > * {
+    pointer-events: auto;
+}
+
+.bookmark {
+    height: 45px;
+    width: 40px;
+    border-radius: 0 0 20px 20px;
+    background-color: #242529;
+}
+
+.bookmark svg {
+    transition: all 0.3s;
+}
+
+.bookmark .open {
+    rotate: 180deg;
+}
+
+#filter .container {
+    background-color: #242529;
+    padding: 3px;
+    padding-top: 0;
+    border-radius: 0 0 19px 0;
+    height: min-content;
+}
+
+#filter .options {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px;
+    background-color: #111214;
+    border-radius: 0 0 16px 16px;
+    overflow: hidden;
+    transition: all 0.3s;
+    max-height: 1000px;
+}
+
+#filter .options.closed {
+    max-height: 0;
+    padding: 0 5px;
+}
+
+#filter .filtertitle {
+    color: #c4c9ce;
+}
+
+hr {
+    border: 1px solid #c4c9ce;
+}
+
+#filter .filterfield {
+    color: #c4c9ce;
+    border-radius: 11px;
+    background-color: #111214;
+}
+
+#filter .filterfield.active {
+    background-color: #242529;
+}

@@ -1,0 +1,134 @@
+.emptyfield {
+    width: 100px !important;
+    height: 30px;
+}
+
+.loginfield.closedfield,
+.loginbutton.closedbutton {
+    width: 100px !important;
+}
+
+#login form {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+#login form ul {
+    padding: 0;
+    position: absolute;
+    left: -46px;
+    width: 105%;
+}
+
+#login form ul:first-child {
+    margin-left: 46px;
+    width: calc(105% - 30px);
+}
+
+.loginfield.closedfield>.input-container {
+    opacity: 0;
+    margin: 0;
+    width: 8px;
+}
+
+#login form ul li {
+    width: calc(5% + min(1000px, 85%));
+    max-width: 600px;
+    min-width: 70px;
+    border-radius: 0 25px 25px 0;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    transition: all 0.3s;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+#login form ul:first-child li {
+    width: 95%;
+}
+
+.fieldicon {
+    height: 30px;
+    min-width: 30px;
+    width: 30px;
+    border-radius: 15px;
+    margin: 0 8px 0 58px;
+    transition: all 0.3s;
+}
+
+.input-container {
+    position: relative;
+    float: right;
+    margin: 0 16px;
+    width: calc(90% - 60px);
+    z-index: 4;
+}
+
+.custom-input {
+    padding: 6px 12px;
+    border-radius: 15px;
+    width: 100%;
+    height: 30px;
+}
+
+.custom-input:focus {
+    outline: none;
+}
+
+.input-label {
+    position: absolute;
+    left: 12px;
+    top: 6px;
+    max-width: calc(100% - 20px);
+    white-space: nowrap;
+    overflow: hidden;
+    transition: all 0.3s;
+    pointer-events: none;
+    color: #999;
+}
+
+.custom-input:not(:placeholder-shown)+.input-label,
+.custom-input:focus+.input-label {
+    top: -8px;
+    font-size: var(--font-size-s);
+    color: #303030;
+}
+
+.loginbutton.closedbutton>.fieldicon {
+    margin-right: 16px;
+}
+
+.loginbutton>.fieldicon {
+    margin-right: 100%;
+}
+
+.loginbutton.closedbutton>.input-button {
+    cursor: default;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+    width: 0;
+}
+
+.loginbutton {
+    background-color: orange;
+    height: 30px;
+    display: flex;
+    transition: all 0.3s;
+    justify-content: end !important;
+}
+
+.input-button {
+    transition: all 0.3s;
+    min-height: 30px;
+    border-radius: 15px;
+    width: auto;
+    padding: 0 15px;
+    margin: 0 16px;
+    opacity: 1;
+    z-index: 5;
+}

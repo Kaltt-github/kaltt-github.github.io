@@ -1,0 +1,251 @@
+#edit br {
+    line-height: 0.5;
+}
+
+#edit {
+    color: white;
+    max-width: 700px;
+}
+
+@media (min-width: 701px) {
+    #edit {
+        margin-left: calc(50% - 350px);
+    }
+}
+
+#edit #eventform {
+    box-sizing: border-box;
+    margin: 15px;
+    padding: 15px;
+    padding-top: 20px;
+    border-radius: 30px;
+    background-color: #313338;
+    width: calc(100% - 30px);
+    height: calc(100% - 30px);
+    overflow: hidden;
+}
+
+#edit .container {
+    padding: 2px;
+    width: calc(100% - 3px);
+    height: calc(100% - 30px);
+}
+
+#edit #eventname {
+    text-align: start;
+    font-size: var(--font-size-xl);
+}
+
+#colorslider {
+    padding: 0 !important;
+    background: linear-gradient(to right, #FF0000, #FFFF00, #00FF00, #00FFFF, #0000FF, #FF00FF, #FF0000);
+}
+
+#colorslider::-webkit-slider-thumb {
+    appearance: none;
+    width: 29px;
+    height: 29px;
+    border-radius: 50%;
+    border: #313338 solid 2px;
+    background: var(--slider-color);
+    cursor: pointer;
+}
+
+#edit input,
+#edit select {
+    color: white;
+    width: 100%;
+    background-color: #383a40;
+    height: 25px;
+    border-radius: 26px;
+    padding-left: 9px;
+    padding-right: 9px;
+    text-align: center;
+}
+
+#edit input:disabled,
+#edit select:disabled,
+#edit button:disabled {
+    color: #383a40;
+}
+
+#edit input:hover,
+#edit select:hover,
+#edit button:hover {
+    background-color: b !important;
+}
+
+#edit .frontlapse {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 5px;
+}
+
+#edit .check {
+    width: 25px;
+    min-width: 25px;
+    height: 25px;
+    padding: 3px;
+    background-color: #383a40;
+    stroke: #313338;
+    border-radius: 50%;
+}
+
+#edit #repeats {
+    display: flex;
+    flex-flow: row nowrap;
+    transition: height 0.3s ease;
+}
+
+#edit #switch {
+    transition: all 0.3s;
+    height: 30px;
+    width: 30px;
+    min-width: 30px;
+    border-radius: 100%;
+    background-color: #383a40;
+    padding: 2px;
+    margin: 4px 6px;
+}
+
+#edit #types {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: start;
+    padding-top: 10px;
+}
+
+#edit .repeattype {
+    opacity: 0;
+    height: 0;
+    width: 100%;
+    pointer-events: none;
+    max-width: 400px;
+}
+
+#edit .repeattype.active {
+    opacity: 1;
+    pointer-events: auto;
+    height: auto;
+}
+
+#edit .inline {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+#edit .weekday {
+    color: white;
+    background-color: #383a40;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+}
+
+#edit .weekday:hover {
+    background-color: #474a51;
+}
+
+#edit .weekday.selected {
+    color: #383a40;
+    background-color: white !important;
+}
+
+#edit #weekcontainer {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+#tasksInput {
+    display: flex;
+    flex-flow: column nowrap;
+    gap: 15px;
+    padding: 0;
+}
+
+#tasksInput li:first-child {
+    border-top: none;
+}
+
+#tasksInput li:last-child {
+    border-bottom: none;
+}
+
+#tasksInput input {
+    text-align: start;
+}
+
+.scrolltask {
+    display: flex;
+    flex-flow: row nowrap;
+    gap: 7px;
+}
+
+#edit .taskbutton {
+    width: 25px;
+    min-width: 25px;
+    height: 25px;
+    padding: 3px;
+    background-color: #383a40;
+    border-radius: 26px;
+}
+
+.dragging {
+    border-top: 2px solid white;
+    border-bottom: 2px solid white;
+    padding: 2px 0;
+}
+
+.dragging>* {
+    opacity: 0.6;
+}
+
+#edit .dragarrows {
+    width: 20px;
+    min-width: 20px;
+    height: 20px;
+    cursor: grab;
+}
+
+#edit .taskbutton:hover {
+    background-color: #474a51;
+}
+
+
+#formbuttons {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: stretch;
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    width: calc(100% - 30px);
+}
+
+#formbuttons button {
+    font-size: var(--font-size-l);
+    color: #b5bac1;
+    background-color: #2b2d31;
+    border: #1f1f1f solid 1px;
+    border-top: #1f1f1f solid 3px;
+    border-bottom: none;
+    height: 40px;
+    flex: 1;
+}
+
+#formbuttons button:hover {
+    color: white;
+}
+
+#formbuttons button:first-child {
+    border-left: none;
+    border-bottom-left-radius: 30px;
+}
+
+#formbuttons button:last-child {
+    border-right: none;
+    border-bottom-right-radius: 30px;
+}
