@@ -532,6 +532,7 @@ class FrontScreen extends FrontDiv {
             this.children = Array.isArray(child) ? child : [child];
         }
         this.isOpen = false;
+        this.isActive = false;
         this.div.onclick = (event) => this.click(event);
     }
 
@@ -550,7 +551,7 @@ class FrontScreen extends FrontDiv {
             screenStack.close();
         }
         screenStack = this;
-        
+        this.isActive = true;
         this.isOpen = true;
         this.style.removeProperty('display');
         delay(10).then(_ => {
@@ -567,6 +568,7 @@ class FrontScreen extends FrontDiv {
         if (this.isClosed) {
             return;
         }
+        this.isActive = this.willClear ? false : true;
         this.div.classList.remove('open');
         delay(300).then(_ => this.style.display = 'none');
         this.isOpen = false;

@@ -600,7 +600,7 @@ class FrontScreenHome extends FrontScreen {
     }
 
     addEvents(events, scopes = ['online', 'local']) {
-        if (this.isClosed) {
+        if (!this.isActive) {
             this.open();
         }
         data.saveEvents(events, scopes);
