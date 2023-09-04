@@ -573,7 +573,7 @@ class FrontScreenHome extends FrontScreen {
 
             if (!this.fetchedOnline) {
                 let email = auth.getUserData()?.email;
-                while(!email) {
+                while (!email) {
                     console.warn("email loading");
                     await delay(100);
                     email = auth.getUserData()?.email;
@@ -657,15 +657,18 @@ class FrontScreenHome extends FrontScreen {
                     }
                 }
             }
-            front = new FrontEvent(event, () => (
-                this.filter.dateEndValue === null ||
-                event.startDate.netValue <= this.filter.dateEndValue
-            ) && (
-                    this.filter.dateStartValue === null ||
-                    event.endDate === null ||
-                    event.endDate.netValue >= this.filter.dateStartValue
-                ) && this.filter.states.includes(event.status));
-            this.insertEventInList(front);
+            for (const e of [event, ...event.repeats.events]) {
+                this.insertEventInList(
+                    new FrontEvent(e, () => (
+                        this.filter.dateEndValue === null ||
+                        e.startDate.netValue <= this.filter.dateEndValue
+                    ) && (
+                            this.filter.dateStartValue === null ||
+                            e.endDate === null ||
+                            e.endDate.netValue >= this.filter.dateStartValue
+                        ) && this.filter.states.includes(e.status))
+                );
+            }
         }
     }
 
