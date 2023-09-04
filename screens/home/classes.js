@@ -614,6 +614,8 @@ class FrontScreenHome extends FrontScreen {
         if (this.firstTime) {
             this.firstTime = false;
             this.fetchMyEvents();
+        } else {
+            this.refresh();
         }
     }
 
