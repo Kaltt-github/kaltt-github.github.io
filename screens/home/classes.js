@@ -598,15 +598,9 @@ class FrontScreenHome extends FrontScreen {
         }
 
         await touchCloud();
-        if (!this.fetchedOnline || (!this.fetchedDelayed && data.hasPendingDocs)) {
-            const interval = setInterval(() => {
-                if (this.fetchedOnline && this.fetchedDelayed && !data.hasPendingDocs) {
-                    clearInterval(interval);
-                } else {
-                    touchCloud();
-                }
-            }, 10000);
-        }
+        setInterval(() => {
+            touchCloud();
+        }, 10000);
 
         loading.remove();
     }

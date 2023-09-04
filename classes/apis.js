@@ -242,6 +242,7 @@ class DataManager {
         if(makeBackup) {
             const transaction = storage.transaction('docs', 'readwrite');
             const docsStore = transaction.objectStore('docs');
+            screenHome.fetchedDelayed = false;
             localStorage.setItem('pendingDocs', true);
             for (const doc of docs) {
                 docsStore.put(doc);
