@@ -605,6 +605,7 @@ class FrontScreen extends FrontDiv {
             if(!front) {
                 console.warn('Missing Front of clicked div');
                 window.location.reload();
+                return;
             }
         }
         front.click(event);
