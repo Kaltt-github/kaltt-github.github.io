@@ -603,7 +603,8 @@ class FrontScreen extends FrontDiv {
         for(const div of path) {
             front = front.children.find(front => front.div === div);
             if(!front) {
-                throw Error('Missing Front of clicked div');
+                console.warn('Missing Front of clicked div');
+                this.refresh();
             }
         }
         front.click(event);
