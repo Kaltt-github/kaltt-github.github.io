@@ -41,7 +41,6 @@ class FrontTask extends FrontClickable {
     get isChecked() {
         return this.task.isChecked;
     }
-
     set isChecked(value) {
         this.task.isChecked = value;
     }
@@ -292,7 +291,6 @@ class FrontEvent extends FrontConditional {
     get name() {
         return this.titleName.div.textContent;
     }
-
     set name(value) {
         this.titleName.div.textContent = value;
         this.event.name = value;
@@ -301,7 +299,6 @@ class FrontEvent extends FrontConditional {
     get color() {
         return this.event.color;
     }
-
     set color(value) {
         this.event.color = value;
         this.style.setProperty('--color-main', this.event.main);
@@ -521,7 +518,9 @@ class FrontScreenHome extends FrontScreen {
         this.filter = filter;
         this.list = list;
         this.eventsMap = new Map();
+        this.firstTime = true;
         this.fetchedLocal = false;
+        this.fetchedDelayed = false;
         this.fetchedOnline = false;
         this.refreshers = [];
 
@@ -538,56 +537,84 @@ class FrontScreenHome extends FrontScreen {
     }
 
     async fetchMyEvents() {
-        let checked = false;
         if (!this.fetchedLocal) {
             const events = await data.getLocalEvents();
             this.fetchedLocal = true;
             if (events.length > 0) {
-                const allEvents = [];
-                for (const event of events) {
-                    allEvents.push(event, ...event.repeats.events);
-                }
                 loading.remove();
-                this.addEvents(allEvents, []);
+                this.addEvents(events, []);
                 this.checkEventStatus();
-                checked = true;
             }
         }
-        if (!this.fetchedOnline && navigator.onLine) {
-            const email = auth.getUserData()?.email;
-            if (!email) {
+
+        const touchCloud = async () => {
+            console.log("touching")
+            if (!navigator.onLine) {
                 return;
             }
-            const events = await data.fetchEvents(email);
-            this.fetchedOnline = true;
-            if (events.length > 0) {
-                const allEvents = [];
-                for (const event of events) {
-                    allEvents.push(event, ...event.repeats.events);
+            if (!await auth.checkToken()) {
+                return;
+            }
+            const delayed = [];
+            if (!this.fetchedDelayed && data.hasPendingDocs) {
+                const docs = await data.getDelayeds();
+                const email = auth.getUserData().email;
+                const rejecteds = [];
+                for (const doc of docs) {
+                    (doc.owner !== email ? rejecteds : delayed).push(doc);
                 }
-                loading.remove();
-                this.addEvents(allEvents, ['local']);
-                this.checkEventStatus();
-                checked = true;
+                data.rejectDelayeds(rejecteds.map(doc => doc.id));
+                if (delayed.length > 0) {
+                    console.error('🟢 Indexed Database: Set delayed (' + delayed.length + ')');
+                    data.setDocs(delayed, false);
+                }
+                data.hasPendingDocs = false;
+            }
+            const updated = delayed.map(doc => doc.id);
+
+            if (!this.fetchedOnline) {
+                const result = await data.fetchEvents(auth.getUserData().email);
+                this.fetchedOnline = true;
+                const events = result.events.filter(event => !updated.includes(event.id))
+                const deleted = result.deleted
+                    .filter(doc => !updated.includes(doc.id))
+                    .map(id => screenHome.eventsMap.get(id)?.event)
+                    .filter(event => event);
+                this.fetchedOnline = true;
+                if (deleted.length > 0) {
+                    this.removeEvents(deleted, ['local'])
+                }
+                if (events.length > 0) {
+                    loading.remove();
+                    this.addEvents(events, ['local']);
+                    this.checkEventStatus();
+                }
             }
         }
-        if (!checked) {
-            loading.remove();
-            this.checkEventStatus();
+
+        await touchCloud();
+        if (!this.fetchedOnline || (!this.fetchedDelayed && data.hasPendingDocs)) {
+            const interval = setInterval(() => {
+                if (this.fetchedOnline && this.fetchedDelayed && !data.hasPendingDocs) {
+                    clearInterval(interval);
+                } else {
+                    touchCloud();
+                }
+            }, 10000);
         }
+
+        loading.remove();
     }
 
     open() {
-        const email = auth.getUserData()?.email;
-        if (!email) {
-            screenLogin.open();
-            return;
-        }
         super.open();
         if (this.isClosed) {
             return;
         }
-        this.fetchMyEvents();
+        if (this.firstTime) {
+            this.firstTime = false;
+            this.fetchMyEvents();
+        }
     }
 
     async checkEventStatus(aux) {
@@ -631,24 +658,23 @@ class FrontScreenHome extends FrontScreen {
                     event.endDate === null ||
                     event.endDate.netValue >= this.filter.dateStartValue
                 ) && this.filter.states.includes(event.status));
-            this.eventsMap.set(event.id, front);
             this.insertEventInList(front);
         }
     }
 
     removeEvents(events, scopes = ['online', 'local']) {
-        if(events.length === 0) {
+        if (events.length === 0) {
             return;
         }
         const fathers = new Map();
-        for(const event of events) {
+        for (const event of events) {
             fathers.set(event.family, event.father ?? event);
         }
         const eventsList = [...fathers.values()];
-        if(scopes.length > 0) {
+        if (scopes.length > 0) {
             data.deleteEvents(eventsList, scopes);
         }
-        
+
         const families = new Set();
         for (const event of eventsList) {
             families.add(event.family);
@@ -658,7 +684,7 @@ class FrontScreenHome extends FrontScreen {
             }
         }
         this.list.children = this.list.children.filter(child => {
-            if(!families.has(child.event.family)) {
+            if (!families.has(child.event.family)) {
                 return true;
             }
             child.remove();

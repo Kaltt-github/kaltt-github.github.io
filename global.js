@@ -16,7 +16,7 @@ const optionsDaysValues = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday
 
 const optionsEventTypes = ['father', 'repeat'];
 
-const workerVersion = '3';
+const workerVersion = '4';
 
 const data = new DataManager();
 const auth = new AuthManager();
@@ -33,7 +33,6 @@ window.onload = () => {
     document.body.appendChild(screenEdit.div);
     document.body.appendChild(screenLogin.div);
     screenHome.open();
-    auth.watchToken();
 };
 
 window.onerror = function (message, source, line, column, error) {

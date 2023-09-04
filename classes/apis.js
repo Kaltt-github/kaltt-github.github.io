@@ -1,5 +1,5 @@
 var storage;
-const request = indexedDB.open('eventlistdatabase', 1);
+const request = indexedDB.open('eventlistdatabase', 2);
 
 request.onerror = function (event) {
     console.error('🟢 Indexed Database: Open failure');
@@ -13,8 +13,15 @@ request.onsuccess = function (event) {
 request.onupgradeneeded = function (event) {
     storage = event.target.result;
 
-    const eventsStore = storage.createObjectStore('events', { keyPath: 'id' });
-    const tagsStore = storage.createObjectStore('tags', { keyPath: 'id' });
+    if (!storage.objectStoreNames.contains('events')) {
+        storage.createObjectStore('events', { keyPath: 'id' });
+    }
+    if (!storage.objectStoreNames.contains('tags')) {
+        storage.createObjectStore('tags', { keyPath: 'id' });
+    }
+    if (!storage.objectStoreNames.contains('docs')) {
+        storage.createObjectStore('docs', { keyPath: 'id' });
+    }
 
     console.info('🟢 Indexed Database: Upgraded');
 };
@@ -27,7 +34,9 @@ class FirebaseController {
     get db() {
         this.intialize();
         if (!this._firestore) {
-            this._firestore = firebase?.firestore();
+            try {
+                this._firestore = firebase?.firestore();
+            } catch (e) { }
         }
         return this._firestore;
     }
@@ -67,6 +76,7 @@ class DataManager {
     constructor() {
         this.waitingSetList = new Map();
         this.waitingDeleteList = new Set();
+        this.waitingList = new Map();
         this.counting = false;
     }
 
@@ -77,6 +87,38 @@ class DataManager {
         auth.deleteUserData();
         screenHome.eventsMap.clear();
         screenHome.eventsList.splice(0, screenHome.eventsList.length);
+    }
+
+    async getDelayeds() {
+        while (!storage) {
+            console.info('🟢 Indexed Database: Waiting...');
+            await delay(1000);
+        }
+        return new Promise((resolve, reject) => {
+            const transaction = storage.transaction('docs', 'readwrite');
+            const docsStore = transaction.objectStore('docs');
+            const request = docsStore.getAll()
+            request.onsuccess = (event) => resolve(event.target.result);
+            request.onerror = (event) => reject(event.target.error);
+        });
+    }
+
+    rejectDelayeds(ids) {
+        if(ids.length > 0) {
+            const transaction = storage.transaction('docs', 'readwrite');
+            const docsStore = transaction.objectStore('docs');
+            for(const id of ids) {
+                docsStore.delete(id);
+            }
+        }
+    }
+
+    get hasPendingDocs() {
+        return localStorage.getItem('pendingDocs') === 'true';
+    }
+
+    set hasPendingDocs(value) {
+        localStorage.setItem('pendingDocs', value);
     }
 
     async saveEvent(event, scopes = ['online', 'local']) {
@@ -137,7 +179,7 @@ class DataManager {
                 continue;
             }
             unique.set(result.id, result);
-            if(setLocal) {
+            if (setLocal) {
                 eventsStore.delete(result.id);
             }
         }
@@ -147,18 +189,23 @@ class DataManager {
     }
 
     async batch(action, events) {
-        if (!navigator.onLine) {
-            return;
-        }
         if (action === 'set') {
             for (const event of events) {
+                this.waitingList.set(event.id, event.toJson());
+
                 this.waitingDeleteList.delete(event.id);
                 this.waitingSetList.set(event.id, event);
             }
         } else if (action === 'delete') {
+            const email = auth.getUserData().email;
+            const now = Date.now();
             for (const event of events) {
-                this.waitingSetList.delete(event.id);
-                this.waitingDeleteList.add(event.id);
+                this.waitingList.set(event.id, {
+                    id: event.id,
+                    lastUpdate: now,
+                    deleted: true,
+                    owner: email,
+                });
             }
         }
 
@@ -166,41 +213,40 @@ class DataManager {
             return;
         }
         this.counting = true;
-        await delay(2000);
-        const toSet = [...this.waitingSetList.values()];
-        this.waitingSetList.clear();
-        const toDelete = [...this.waitingDeleteList.values()];
-        this.waitingDeleteList.clear();
+        await delay(1500);
         this.counting = false;
+        this.setDocs([...this.waitingList.values()]);
+    }
 
-        const now = Date.now();
-        if (toSet.length + toDelete.length === 0) {
-            return;
+    async setDocs(docs, makeBackup = true) {
+        if (auth.tokenVerified && navigator.onLine) {
+            if (docs.length === 0) {
+                return true;
+            }
+            if (docs.length === 1) {
+                await fb.collectionEvents.doc(docs[0].id).set(docs[0]);
+                return true;
+            }
+            const batch = fb.db.batch();
+            for (const doc of docs) {
+                batch.set(fb.collectionEvents.doc(doc.id), doc);
+            }
+            try {
+                await batch.commit();
+            } catch (e) {
+                return false;
+            }
+            return true;
+        } 
+        if(makeBackup) {
+            const transaction = storage.transaction('docs', 'readwrite');
+            const docsStore = transaction.objectStore('docs');
+            localStorage.setItem('pendingDocs', true);
+            for (const doc of docs) {
+                docsStore.put(doc);
+            }
         }
-        const email = auth.getUserData().email;
-        if (toSet.length + toDelete.length === 1) {
-            return toSet.length === 1
-                ? fb.collectionEvents.doc(toSet[0].id).set(toSet[0].toJson())
-                : fb.collectionEvents.doc(toDelete[0]).set({
-                    id: toDelete[0],
-                    lastUpdate: now,
-                    deleted: true,
-                    owner: email,
-                });
-        }
-        const batch = fb.db.batch();
-        for (const event of toSet) {
-            batch.set(fb.collectionEvents.doc(event.id), event.toJson());
-        }
-        for (const id of toDelete) {
-            batch.set(fb.collectionEvents.doc(id), {
-                id: id,
-                lastUpdate: now,
-                deleted: true,
-                owner: email,
-            });
-        }
-        batch.commit();
+        return false;
     }
 
     async fetchEvents(email) {
@@ -218,20 +264,14 @@ class DataManager {
                 events.push(MowEvent.fromJson(data));
             }
         }
-        if (deleted.length > 0) {
-            screenHome.removeEvents(deleted
-                .map(id => screenHome.eventsMap.get(id)?.event)
-                .filter(event => event)
-            )
-        }
-        return events;
+        return { events, deleted };
     }
 
     getLocalEvents() {
         return new Promise(async (resolve, reject) => {
             while (!storage) {
-                await delay(1000);
                 console.info('🟢 Indexed Database: Waiting...');
+                await delay(1000);
             }
             const transaction = storage.transaction('events', 'readonly');
             const eventsStore = transaction.objectStore('events');
@@ -255,34 +295,33 @@ class AuthManager {
         this.tokenVerified = false;
     }
 
-    watchToken() {
-        setInterval(async () => {
-            if (
-                screenLogin.isOpen ||
-                this.tokenVerified ||
-                !navigator.onLine
-            ) {
-                return;
-            }
-            const olddata = this.getUserData();
-            if (!olddata || Object.keys(olddata).length === 0) {
-                console.info('🟡 Auth: User Data missing');
-                data.clearCache();
-                screenLogin.open();
-                return;
-            }
-            const newdata = await auth.loginWithToken(olddata.email, olddata.token);
-            if (!newdata) {
-                console.info('🟡 Auth: User Data expired');
-                data.clearCache();
-                showNotification('check', 'Expiro la sesion', 120);
-                screenLogin.open();
-                return;
-            }
-            console.info('🟡 Auth: User Data updated');
-            auth.tokenVerified = true;
-            auth.setUserData(newdata.email, newdata.name, olddata.token);
-        }, 10000);
+    async checkToken() {
+        if (
+            screenLogin.isOpen ||
+            this.tokenVerified ||
+            !navigator.onLine
+        ) {
+            return true;
+        }
+        const olddata = this.getUserData();
+        if (!olddata || Object.keys(olddata).length === 0) {
+            console.info('🟡 Auth: User Data missing');
+            data.clearCache();
+            screenLogin.open();
+            return false;
+        }
+        const newdata = await auth.loginWithToken(olddata.email, olddata.token);
+        if (!newdata) {
+            console.info('🟡 Auth: User Data expired');
+            data.clearCache();
+            showNotification('check', 'Expiro la sesion', 120);
+            screenLogin.open();
+            return false;
+        }
+        console.info('🟡 Auth: User Data updated');
+        auth.tokenVerified = true;
+        auth.setUserData(newdata.email, newdata.name, olddata.token);
+        return true;
     }
 
     async canUseEmail(email) {

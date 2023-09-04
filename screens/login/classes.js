@@ -281,6 +281,7 @@ class FrontScreenLogin extends FrontScreen {
     }
 
     goPhaseLogin() {
+        this.open();
         this.phase = 'login';
         this.isLoading = false;
         this.email.open();
@@ -429,11 +430,12 @@ class FrontScreenLogin extends FrontScreen {
     }
 
     async tryLogIn() {
+        console.log("login!")
         const olddata = auth.getUserData();
         if (!olddata || Object.keys(olddata).length === 0) {
             auth.deleteUserData();
             this.goPhaseLogin();
-            return;
+            return false;
         }
         if(!navigator.onLine) {
             auth.tokenVerified = false;
@@ -445,7 +447,7 @@ class FrontScreenLogin extends FrontScreen {
                 auth.deleteUserData();
                 showNotification('check', 'Expiro la sesion', 120);
                 this.goPhaseLogin();
-                return;
+                return false;
             }
             auth.tokenVerified = true;
             auth.setUserData(newdata.email, newdata.name, olddata.token);
@@ -454,5 +456,6 @@ class FrontScreenLogin extends FrontScreen {
         }
         
         screenHome.open();
+        return true;
     }
 }

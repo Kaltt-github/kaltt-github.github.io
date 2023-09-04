@@ -916,7 +916,7 @@ class FrontScreenEdit extends FrontScreen {
             this.repeats.values,
             this.repeats.hasLimit ? this.repeats.limit : null,
         );
-        screenHome.addEvents([newevent, ...newevent.repeats.events]);
+        screenHome.addEvents([newevent]);
         screenHome.open();
     }
 
@@ -927,23 +927,22 @@ class FrontScreenEdit extends FrontScreen {
 
         const eventFather = this.eventOriginal.father ?? this.eventOriginal;
         const eventTarget = this.eventOriginal;
-        const group = [eventFather, ...eventFather.repeats.events]
-            .map(event => screenHome.eventsList.find(front => front.event === event));
-        let hasChanges = false;
-
+        const group = [eventFather, ...eventFather.repeats.events];
+        let hasChanges = !screenHome.eventsList.find(front => front.event === eventFather);
+        
         const name = this.name;
         if (eventFather.name !== name) {
             hasChanges = true;
-            for (const front of group) {
-                front.name = name;
+            for (const event of group) {
+                event.name = name;
             }
         }
 
         const color = this.color;
         if (eventFather.color !== color) {
             hasChanges = true;
-            for (const front of group) {
-                front.color = color;
+            for (const event of group) {
+                event.color = color;
             }
         }
 
@@ -957,14 +956,14 @@ class FrontScreenEdit extends FrontScreen {
                 ).asDays !== this.dateLength)
         ) {
             hasChanges = true;
-            for (const front of group) {
-                front.event.endDate = front.event.startDate.copy();
-                front.event.endDate.day += this.dateLength;
+            for (const event of group) {
+                event.endDate = event.startDate.copy();
+                event.endDate.day += this.dateLength;
             }
         } else if (!this.dateHasEnd && eventFather.endDate !== null) {
             hasChanges = true;
-            for (const front of group) {
-                front.event.endDate = null;
+            for (const event of group) {
+                event.endDate = null;
             }
         }
 
@@ -974,10 +973,10 @@ class FrontScreenEdit extends FrontScreen {
                 MowDateTime.fromDateAndTime(eventTarget.startDate, now.time),
                 MowDateTime.fromDateAndTime(this.dateStart, now.time)
             ).asDays;
-            for (const front of group) {
-                front.event.startDate.day += changedLength;
-                if (front.event.endDate) {
-                    front.event.endDate.day += changedLength;
+            for (const event of group) {
+                event.startDate.day += changedLength;
+                if (event.endDate) {
+                    event.endDate.day += changedLength;
                 }
             }
         }
@@ -991,14 +990,14 @@ class FrontScreenEdit extends FrontScreen {
                 ).asMinutes !== this.timeLength)
         ) {
             hasChanges = true;
-            for (const front of group) {
-                front.event.endTime = front.event.startTime.copy();
-                front.event.endTime.minute += this.timeLength;
+            for (const event of group) {
+                event.endTime = event.startTime.copy();
+                event.endTime.minute += this.timeLength;
             }
         } else if (!this.timeHasEnd && eventFather.endTime !== null) {
             hasChanges = true;
-            for (const front of group) {
-                front.event.endTime = null;
+            for (const event of group) {
+                event.endTime = null;
             }
         }
 
@@ -1008,20 +1007,16 @@ class FrontScreenEdit extends FrontScreen {
                 MowDateTime.fromDateAndTime(now.date, eventTarget.startTime),
                 MowDateTime.fromDateAndTime(now.date, this.timeStart)
             ).asMinutes;
-            for (const front of group) {
-                front.event.startTime.minute += changedLength;
-                if (front.event.endTime) {
-                    front.event.endTime.minute += changedLength;
+            for (const event of group) {
+                event.startTime.minute += changedLength;
+                if (event.endTime) {
+                    event.endTime.minute += changedLength;
                 }
             }
         }
 
         const nowTasks = [];
         let position = 0;
-        const divsList = Array.from(this.tasksList.div.children);
-        const inputsList = this.tasksList.children
-            .sort((a, b) => divsList.indexOf(a.div) - divsList.indexOf(b.div))
-            .filter(input => input.children[input.children.length - 2].value !== '');
         for (const child of Array.from(this.tasksList.div.children)) {
             const children = Array.from(child.children);
             const input = children[children.length - 3];
@@ -1040,43 +1035,44 @@ class FrontScreenEdit extends FrontScreen {
             position++;
         }
 
-        const ofront = group.find(front => front.id === this.eventOriginal.id);
-        for (const ntask of nowTasks) {
-            const otask = ofront.taskslist.children.find(ftask => ftask.id === ntask.id);
-            if (!otask) {
+        const orig = this.eventOriginal;
+        for (const newtask of nowTasks) {
+            const origTask = orig.tasks.find(task => task.id === newtask.id);
+            if (!origTask) {
                 hasChanges = true;
-                for (const front of group) {
-                    front.event.tasks.push(ntask);
-                    front.taskslist.addChild(new FrontTask(front, ntask));
+                for (const event of group) {
+                    event.tasks.push(newtask);
                 }
                 continue;
             }
-            if (ntask.isChecked !== otask.isChecked) {
+            if (newtask.isChecked !== origTask.isChecked) {
                 hasChanges = true;
-                otask.click();
+                origTask.isChecked = true;
             }
-            if (ntask.description !== otask.description) {
+            if (newtask.description !== origTask.description) {
                 hasChanges = true;
-                for (const front of group) {
-                    front.taskslist.children.find(task => task.id === ntask.id).description = ntask.description;
+                for (const event of group) {
+                    event.tasks.find(task => task.id === newtask.id).description = newtask.description;
                 }
             }
-            if (ntask.position !== otask.position) {
+            if (newtask.position !== origTask.position) {
                 hasChanges = true;
-                for (const front of group) {
-                    front.taskslist.children.find(task => task.id === ntask.id).position = ntask.position;
+                for (const event of group) {
+                    event.tasks.find(task => task.id === newtask.id).position = newtask.position;
                 }
             }
         }
         const toKeep = nowTasks.map(t => t.id);
-        const toDelete = ofront.taskslist.children.filter(task => !toKeep.includes(task.id));
+        const toDelete = orig.tasks.filter(task => !toKeep.includes(task.id));
         if (toDelete.length !== 0) {
             hasChanges = true;
-            for (const frontTask of toDelete) {
-                for (const front of group) {
-                    const target = front.taskslist.children.find(task => task.id === frontTask.id);
-                    front.taskslist.children.splice(front.taskslist.children.indexOf(target), 1)[0].remove();
-                    front.event.tasks.splice(front.event.tasks.indexOf(target.task), 1);
+            for (const deleteTask of toDelete) {
+                for (const event of group) {
+                    event.tasks.splice(
+                        event.tasks.findIndex(task => 
+                            task.id === deleteTask.id
+                        ), 1
+                    );
                 }
             }
         }
@@ -1104,8 +1100,7 @@ class FrontScreenEdit extends FrontScreen {
         }
 
         if (hasChanges) {
-            const group = [eventFather, ...eventFather.repeats.events];
-            screenHome.addEvents(group);
+            screenHome.addEvents([eventFather]);
         }
         screenHome.open();
     }
