@@ -548,7 +548,6 @@ class FrontScreenHome extends FrontScreen {
         }
 
         const touchCloud = async () => {
-            console.log("touching")
             if (!navigator.onLine) {
                 return;
             }
@@ -565,7 +564,7 @@ class FrontScreenHome extends FrontScreen {
                 }
                 data.rejectDelayeds(rejecteds.map(doc => doc.id));
                 if (delayed.length > 0) {
-                    console.error('🟢 Indexed Database: Set delayed (' + delayed.length + ')');
+                    console.info('🟢 Indexed Database: Pushed delayed (' + delayed.length + ')');
                     data.setDocs(delayed, false);
                 }
                 data.hasPendingDocs = false;
@@ -573,7 +572,13 @@ class FrontScreenHome extends FrontScreen {
             const updated = delayed.map(doc => doc.id);
 
             if (!this.fetchedOnline) {
-                const result = await data.fetchEvents(auth.getUserData().email);
+                let email = auth.getUserData()?.email;
+                while(!email) {
+                    console.warn("email loading");
+                    await delay(100);
+                    email = auth.getUserData()?.email;
+                }
+                const result = await data.fetchEvents(email);
                 this.fetchedOnline = true;
                 const events = result.events.filter(event => !updated.includes(event.id))
                 const deleted = result.deleted

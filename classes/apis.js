@@ -189,8 +189,10 @@ class DataManager {
     }
 
     async batch(action, events) {
+        const now = Date.now();
         if (action === 'set') {
             for (const event of events) {
+                event.lastUpdate = now;
                 this.waitingList.set(event.id, event.toJson());
 
                 this.waitingDeleteList.delete(event.id);
@@ -198,7 +200,6 @@ class DataManager {
             }
         } else if (action === 'delete') {
             const email = auth.getUserData().email;
-            const now = Date.now();
             for (const event of events) {
                 this.waitingList.set(event.id, {
                     id: event.id,
@@ -253,7 +254,15 @@ class DataManager {
         if (!navigator.onLine) {
             return [];
         }
-        const query = await fb.collectionEvents.where('owner', '==', email).get();
+        const now = Date.now();
+        const lastFetch = parseInt(localStorage.getItem('lastEventFetch'));
+        const query = isNaN(lastFetch)
+             ? await fb.collectionEvents.where('owner', '==', email).get()
+             : await fb.collectionEvents
+                .where('owner', '==', email)
+                .where('lastUpdate', '>=', lastFetch)
+                .get();
+        localStorage.setItem('lastEventFetch', now);
         const events = [];
         const deleted = [];
         for (const doc of query.docs) {
@@ -283,7 +292,7 @@ class DataManager {
             };
 
             getRequest.onerror = function (event) {
-                console.error('🟢 Indexed Database: Get local events failure');
+                console.info('🟢 Indexed Database: Get local events failure');
                 reject(event.target.error);
             };
         });

@@ -281,7 +281,9 @@ class FrontScreenLogin extends FrontScreen {
     }
 
     goPhaseLogin() {
-        this.open();
+        if(this.isClosed) {
+            this.open();
+        }
         this.phase = 'login';
         this.isLoading = false;
         this.email.open();
@@ -430,7 +432,6 @@ class FrontScreenLogin extends FrontScreen {
     }
 
     async tryLogIn() {
-        console.log("login!")
         const olddata = auth.getUserData();
         if (!olddata || Object.keys(olddata).length === 0) {
             auth.deleteUserData();

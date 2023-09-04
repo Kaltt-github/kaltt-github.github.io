@@ -16,7 +16,7 @@ const optionsDaysValues = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday
 
 const optionsEventTypes = ['father', 'repeat'];
 
-const workerVersion = '4';
+const workerVersion = '5';
 
 const data = new DataManager();
 const auth = new AuthManager();
@@ -38,7 +38,7 @@ window.onload = () => {
 window.onerror = function (message, source, line, column, error) {
     showNotification('warning', 'Error: ' + message + ' (' + line + ')', 0);
     console.trace();
-    throw error;
+    //throw error;
 };
 
 async function checkServiceWorker() {
