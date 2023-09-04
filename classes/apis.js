@@ -127,7 +127,6 @@ class DataManager {
 
     async saveEvents(events, scopes = ['online', 'local']) {
         const unique = new Map();
-        const now = Date.now();
 
         const transaction = storage.transaction('events', 'readwrite');
         const eventsStore = transaction.objectStore('events');
@@ -145,7 +144,6 @@ class DataManager {
                 continue;
             }
             unique.set(result.id, result);
-            result.lastUpdate = now;
             if (setLocal) {
                 eventsStore.put(result.toJson());
             }
@@ -189,16 +187,15 @@ class DataManager {
     }
 
     async batch(action, events) {
-        const now = Date.now();
         if (action === 'set') {
             for (const event of events) {
-                event.lastUpdate = now;
                 this.waitingList.set(event.id, event.toJson());
 
                 this.waitingDeleteList.delete(event.id);
                 this.waitingSetList.set(event.id, event);
             }
         } else if (action === 'delete') {
+            const now = Date.now();
             const email = auth.getUserData().email;
             for (const event of events) {
                 this.waitingList.set(event.id, {

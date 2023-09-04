@@ -17,6 +17,7 @@ class FrontTask extends FrontClickable {
             classes: ['task'],
             onclick: () => {
                 this.isChecked = !this.isChecked;
+                this.event.lastUpdate = Date.now();
                 this.frontEvent.refresh();
                 data.saveEvent(this.event);
             },
@@ -153,32 +154,61 @@ class FrontEvent extends FrontConditional {
                             event.end,
                             now
                         );
-                        message += 'Expirado hace ';
-                        if (expiredLapse.asYears > 0) {
-                            message += expiredLapse.asYears + (expiredLapse.asYears === 1 ? ' año' : ' años');
-                        } else if (expiredLapse.asMonths > 0) {
-                            message += expiredLapse.asMonths + (expiredLapse.asMonths === 1 ? ' mes' : ' meses');
-                        } else if (expiredLapse.asDays > 0) {
-                            message += expiredLapse.asDays + (expiredLapse.asDays === 1 ? ' dia' : ' dias');
-                        } else if (expiredLapse.asHours > 0) {
-                            message += expiredLapse.asHours + (expiredLapse.asHours === 1 ? ' hora' : ' horas');
-                            const mins = expiredLapse.asMinutes - expiredLapse.asHours * 60;
-                            if (mins > 0) {
-                                message += ' y ' + mins + (mins === 1 ? ' minuto' : ' minutos');
-                            }
-                        } else if (expiredLapse.asMinutes > 0) {
-                            message += expiredLapse.asMinutes + (expiredLapse.asMinutes === 1 ? ' minuto' : ' minutos');
-                        } else if (expiredLapse.asSeconds > 0) {
-                            message += expiredLapse.asSeconds + (expiredLapse.asSeconds === 1 ? ' segundo' : ' segundos');
+                        if (expiredLapse.asDays > 7) {
+                            message += 'Expirado el ' +
+                                event.endDate +
+                                (
+                                    event.endTime
+                                        ? ' a las ' + event.endTime.hour +
+                                        ':' +
+                                        '0'.repeat(2 - event.endTime.minute.toString().length) +
+                                        event.endTime.minute
+                                        : ''
+                                );
                         } else {
-                            message = ' 0 segundos';
+                            message += 'Expirado hace ';
+                            if (expiredLapse.asDays > 0) {
+                                message += expiredLapse.asDays + (expiredLapse.asDays === 1 ? ' dia' : ' dias');
+                            } else if (expiredLapse.asHours > 0) {
+                                message += expiredLapse.asHours + (expiredLapse.asHours === 1 ? ' hora' : ' horas');
+                                const mins = expiredLapse.asMinutes - expiredLapse.asHours * 60;
+                                if (mins > 0) {
+                                    message += ' y ' + mins + (mins === 1 ? ' minuto' : ' minutos');
+                                }
+                            } else if (expiredLapse.asMinutes > 0) {
+                                message += expiredLapse.asMinutes + (expiredLapse.asMinutes === 1 ? ' minuto' : ' minutos');
+                            } else if (expiredLapse.asSeconds > 0) {
+                                message += expiredLapse.asSeconds + (expiredLapse.asSeconds === 1 ? ' segundo' : ' segundos');
+                            } else {
+                                message = ' 0 segundos';
+                            }
                         }
                         break;
                     case 'cancelled':
-                        message += 'Cancelado';
+                        const primitive = new Date(event.lastUpdate);
+                        const end = MowDateTime.fromDateAndTime(
+                            new MowDate(primitive.getFullYear(), primitive.getMonth() + 1, primitive.getDate()),
+                            new MowTime(primitive.getHours(), primitive.getMinutes())
+                        );
+                        message += 'Cancelado el ' +
+                            end.date +
+                            ' a las ' + end.time.hour +
+                            ':' +
+                            '0'.repeat(2 - end.time.minute.toString().length) +
+                            end.time.minute;
                         break;
                     case 'completed':
-                        message += 'Completado';
+                        const prime = new Date(event.lastUpdate);
+                        const ended = MowDateTime.fromDateAndTime(
+                            new MowDate(prime.getFullYear(), prime.getMonth() + 1, prime.getDate()),
+                            new MowTime(prime.getHours(), prime.getMinutes())
+                        );
+                        message += 'Completado el ' +
+                            ended.date +
+                            ' a las ' + ended.time.hour +
+                            ':' +
+                            '0'.repeat(2 - ended.time.minute.toString().length) +
+                            ended.time.minute;
                         break;
                 }
                 showNotification('info', message, event.color);
@@ -313,12 +343,14 @@ class FrontEvent extends FrontConditional {
             return;
         }
         this.event.interaction = 'completed';
-        data.saveEvent(this.event);
+        this.event.lastUpdate = Date.not();
         this.refresh();
+        data.saveEvent(this.event);
     }
 
     clickLate() {
         this.event.delayed += 10;
+        this.event.lastUpdate = Date.not();
         this.refresh();
         data.saveEvent(this.event);
     }
@@ -329,8 +361,9 @@ class FrontEvent extends FrontConditional {
         } else {
             this.event.interaction = 'cancelled';
         }
-        data.saveEvent(this.event);
+        this.event.lastUpdate = Date.not();
         this.refresh();
+        data.saveEvent(this.event);
     }
 
     refresh() {
@@ -653,14 +686,38 @@ class FrontScreenHome extends FrontScreen {
             }
             for (const e of [event, ...event.repeats.events]) {
                 this.insertEventInList(
-                    new FrontEvent(e, () => (
-                        this.filter.dateEndValue === null ||
-                        e.startDate.netValue <= this.filter.dateEndValue
-                    ) && (
-                            this.filter.dateStartValue === null ||
-                            e.endDate === null ||
-                            e.endDate.netValue >= this.filter.dateStartValue
-                        ) && this.filter.states.includes(e.status))
+                    new FrontEvent(e, () => {
+                        if(
+                            this.filter.dateEndValue !== null &&
+                            e.startDate.netValue > this.filter.dateEndValue
+                        ) {
+                            return false;
+                        }
+
+                        const status = e.status;
+                        if(this.filter.dateStartValue !== null) {
+                            if(e.endDate !== null && e.endDate.netValue < this.filter.dateStartValue) {
+                                return false;
+                            }
+
+                            if(['completed','cancelled'].includes(status)) {
+                                const primitive = new Date(event.lastUpdate);
+                                const end = MowDateTime.fromDateAndTime(
+                                    new MowDate(primitive.getFullYear(), primitive.getMonth() + 1, primitive.getDate()),
+                                    new MowTime(primitive.getHours(), primitive.getMinutes())
+                                );
+                                if(end.netValue < this.filter.dateStartValue) {
+                                    return false;
+                                }
+                            }
+                        }
+                        
+                        if(!this.filter.states.includes(status)) {
+                            return false;
+                        }
+
+                        return true;
+                    })
                 );
             }
         }

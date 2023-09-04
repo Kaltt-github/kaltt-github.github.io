@@ -1100,6 +1100,7 @@ class FrontScreenEdit extends FrontScreen {
         }
 
         if (hasChanges) {
+            eventFather.lastUpdate = Date.now();
             screenHome.addEvents([eventFather]);
         }
         screenHome.open();
