@@ -343,14 +343,14 @@ class FrontEvent extends FrontConditional {
             return;
         }
         this.event.interaction = 'completed';
-        this.event.lastUpdate = Date.not();
+        this.event.lastUpdate = Date.now();
         this.refresh();
         data.saveEvent(this.event);
     }
 
     clickLate() {
         this.event.delayed += 10;
-        this.event.lastUpdate = Date.not();
+        this.event.lastUpdate = Date.now();
         this.refresh();
         data.saveEvent(this.event);
     }
@@ -361,7 +361,7 @@ class FrontEvent extends FrontConditional {
         } else {
             this.event.interaction = 'cancelled';
         }
-        this.event.lastUpdate = Date.not();
+        this.event.lastUpdate = Date.now();
         this.refresh();
         data.saveEvent(this.event);
     }
@@ -712,7 +712,7 @@ class FrontScreenHome extends FrontScreen {
                             }
                         }
                         
-                        if(!this.filter.states.includes(status)) {
+                        if(this.filter.states && !this.filter.states.includes(status)) {
                             return false;
                         }
 
